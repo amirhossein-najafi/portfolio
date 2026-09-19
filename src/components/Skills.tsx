@@ -16,28 +16,51 @@ export function Skills() {
 
   useEffect(() => {
     const list = listRef.current;
-    if (!list || prefersReducedMotion()) return;
+    if (!list) return;
 
-    const chips = list.querySelectorAll(".skill-chip");
+    const chips = list.querySelectorAll<HTMLElement>(".skill-chip");
+    if (!chips.length) return;
+
+    if (prefersReducedMotion()) {
+      gsap.set(chips, { opacity: 1, y: 0, clearProps: "transform" });
+      return;
+    }
+
+    gsap.set(chips, { opacity: 0, y: 16 });
+
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        chips,
-        { opacity: 0, y: 16 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: motion.duration.fast,
-          stagger: 0.03,
-          ease: motion.ease,
-          scrollTrigger: {
-            trigger: list,
-            start: "top 85%",
-          },
+      gsap.to(chips, {
+        opacity: 1,
+        y: 0,
+        duration: motion.duration.fast,
+        stagger: 0.03,
+        ease: motion.ease,
+        scrollTrigger: {
+          trigger: list,
+          start: "top 90%",
+          once: true,
+          invalidateOnRefresh: true,
         },
-      );
+      });
     }, list);
 
-    return () => ctx.revert();
+    // Safari + Lenis: ensure triggers recalculate after layout
+    const refreshId = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+
+    // Fallback if ScrollTrigger never fires (common on iOS Safari)
+    const fallbackId = window.setTimeout(() => {
+      chips.forEach((chip) => {
+        if (getComputedStyle(chip).opacity === "0") {
+          gsap.to(chips, { opacity: 1, y: 0, duration: 0.35, stagger: 0.02, ease: motion.easeSoft });
+        }
+      });
+    }, 1200);
+
+    return () => {
+      window.cancelAnimationFrame(refreshId);
+      window.clearTimeout(fallbackId);
+      ctx.revert();
+    };
   }, [locale, t.skills.groups]);
 
   return (
@@ -60,7 +83,6 @@ export function Skills() {
                   <li
                     key={item}
                     className="skill-chip rounded-md border border-[var(--line)] bg-white/[0.03] px-3 py-1.5 text-sm text-[var(--ink)]"
-                    style={{ opacity: 0 }}
                   >
                     {item}
                   </li>
