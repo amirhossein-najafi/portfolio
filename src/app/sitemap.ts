@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
-import { localeUrl, siteConfig } from "@/data/seo";
+import { profile } from "@/data/profile";
+import { absoluteUrl, localeUrl, siteConfig } from "@/data/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
+  const photo = absoluteUrl(profile.photo);
 
   return [
     {
@@ -10,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 1,
+      images: [photo],
       alternates: {
         languages: {
           en: localeUrl("en"),
@@ -23,6 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly",
       priority: 0.9,
+      images: [photo],
       alternates: {
         languages: {
           en: localeUrl("en"),

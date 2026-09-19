@@ -2,16 +2,34 @@ import { profile } from "@/data/profile";
 import { absoluteUrl, siteConfig } from "@/data/seo";
 
 export function JsonLd() {
+  const photoUrl = absoluteUrl(profile.photo);
+
+  const personImage = {
+    "@type": "ImageObject",
+    "@id": `${siteConfig.url}/#photo`,
+    contentUrl: photoUrl,
+    url: photoUrl,
+    caption: profile.photoAlt.en,
+    name: `${siteConfig.name} — portrait`,
+    description: profile.photoAlt.en,
+    encodingFormat: "image/jpeg",
+    representativeOfPage: true,
+    creator: {
+      "@type": "Person",
+      name: siteConfig.name,
+    },
+  };
+
   const person = {
     "@type": "Person",
     "@id": `${siteConfig.url}/#person`,
     name: siteConfig.name,
-    alternateName: [siteConfig.nameFa, "Amir Najafi"],
+    alternateName: [siteConfig.nameFa, "Amir Najafi", "امیر حسین نجفی"],
     url: siteConfig.url,
-    image: absoluteUrl(profile.photo),
+    image: { "@id": `${siteConfig.url}/#photo` },
     email: `mailto:${siteConfig.email}`,
     telephone: siteConfig.phone,
-    jobTitle: siteConfig.jobTitle.en,
+    jobTitle: [siteConfig.jobTitle.en, siteConfig.jobTitle.fa],
     description: siteConfig.description.en,
     knowsLanguage: ["en", "fa"],
     address: {
@@ -61,15 +79,12 @@ export function JsonLd() {
     about: { "@id": `${siteConfig.url}/#person` },
     mainEntity: { "@id": `${siteConfig.url}/#person` },
     inLanguage: "en",
-    primaryImageOfPage: {
-      "@type": "ImageObject",
-      url: absoluteUrl(profile.photo),
-    },
+    primaryImageOfPage: { "@id": `${siteConfig.url}/#photo` },
   };
 
   const graph = {
     "@context": "https://schema.org",
-    "@graph": [person, website, webpage],
+    "@graph": [personImage, person, website, webpage],
   };
 
   return (

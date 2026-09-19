@@ -183,7 +183,8 @@ export function Hero() {
             <div className="relative aspect-[3/4]">
               <Image
                 src={profile.photo}
-                alt={`${profile.name} portrait`}
+                alt={locale === "fa" ? profile.photoAlt.fa : profile.photoAlt.en}
+                title={locale === "fa" ? profile.photoAlt.fa : profile.photoAlt.en}
                 fill
                 priority
                 className="object-cover object-center contrast-[1.05] saturate-[0.92]"

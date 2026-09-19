@@ -82,11 +82,21 @@ export const metadata: Metadata = {
     emails: [siteConfig.email],
     phoneNumbers: [siteConfig.phone],
     countryName: "Iran",
+    images: [
+      {
+        url: absoluteUrl(profile.photo),
+        width: 960,
+        height: 1280,
+        alt: profile.photoAlt.en,
+        type: "image/jpeg",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.title.en,
     description: siteConfig.description.en,
+    images: [absoluteUrl(profile.photo)],
   },
   robots: {
     index: true,
