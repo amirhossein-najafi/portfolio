@@ -111,8 +111,12 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: "/icon", type: "image/png" }],
-    apple: [{ url: "/apple-icon", type: "image/png" }],
+    icon: [
+      { url: "/icon/48", type: "image/png", sizes: "48x48" },
+      { url: "/icon/192", type: "image/png", sizes: "192x192" },
+    ],
+    shortcut: [{ url: "/icon/48", type: "image/png" }],
+    apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
   },
   manifest: "/manifest.webmanifest",
   other: {
