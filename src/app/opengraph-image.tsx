@@ -86,7 +86,7 @@ export default function OpenGraphImage() {
               lineHeight: 1.4,
             }}
           >
-            React · Next.js · TypeScript · Production UI
+            React · Next.js · TypeScript · Tailwind
           </div>
         </div>
 

@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: "/opengraph-image.png",
+        destination: "/opengraph-image",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
