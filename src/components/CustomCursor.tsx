@@ -6,7 +6,6 @@ import gsap from "gsap";
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
-  const spotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fine = window.matchMedia("(pointer: fine)").matches;
@@ -15,8 +14,7 @@ export function CustomCursor() {
 
     const dot = dotRef.current;
     const ring = ringRef.current;
-    const spot = spotRef.current;
-    if (!dot || !ring || !spot) return;
+    if (!dot || !ring) return;
 
     document.documentElement.classList.add("has-custom-cursor");
 
@@ -24,16 +22,12 @@ export function CustomCursor() {
     const dotY = gsap.quickTo(dot, "y", { duration: 0.12, ease: "power2.out" });
     const ringX = gsap.quickTo(ring, "x", { duration: 0.5, ease: "power3.out" });
     const ringY = gsap.quickTo(ring, "y", { duration: 0.5, ease: "power3.out" });
-    const spotX = gsap.quickTo(spot, "x", { duration: 1.1, ease: "power3.out" });
-    const spotY = gsap.quickTo(spot, "y", { duration: 1.1, ease: "power3.out" });
 
     const onMove = (e: MouseEvent) => {
       dotX(e.clientX);
       dotY(e.clientY);
       ringX(e.clientX);
       ringY(e.clientY);
-      spotX(e.clientX);
-      spotY(e.clientY);
     };
 
     const onOver = (e: MouseEvent) => {
@@ -68,7 +62,6 @@ export function CustomCursor() {
 
   return (
     <>
-      <div ref={spotRef} className="cursor-spotlight" aria-hidden />
       <div ref={dotRef} className="cursor-dot" aria-hidden />
       <div ref={ringRef} className="cursor-ring" aria-hidden />
     </>
