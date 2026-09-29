@@ -22,58 +22,58 @@ export function Contact() {
         }}
         aria-hidden
       />
+      <div className="hero-grid-lines pointer-events-none absolute inset-0 opacity-60" aria-hidden />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[rgba(228,192,120,0.45)] to-transparent"
         aria-hidden
       />
 
-      <div className="container relative z-10 py-[clamp(5rem,12vw,8.5rem)] text-[var(--ink)]">
+      <div className="container relative z-10 py-[clamp(6rem,14vw,10rem)] text-[var(--ink)]">
         <Reveal>
-          <p className="mb-4 text-xs font-bold tracking-[0.2em] text-[var(--gold)] uppercase">
-            {t.contact.label}
-          </p>
+          <p className="section-label">{t.contact.label}</p>
           <SplitReveal
             text={t.contact.title}
             as="h2"
-            className="display max-w-[16ch] text-[clamp(2.6rem,7vw,5rem)] font-semibold"
+            className="display max-w-[14ch] text-[clamp(3rem,9vw,7.5rem)] leading-[0.98] font-semibold"
           />
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)] md:text-lg">
+          <p className="mt-7 max-w-xl text-base leading-relaxed text-[var(--ink-muted)] md:text-lg">
             {t.contact.lead}
           </p>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Magnetic strength={36}>
-              <a href={mailto} className="btn btn-accent">
-                {t.ui.emailMe}
+          <div className="mt-12 flex flex-wrap items-center gap-3">
+            <Magnetic strength={44}>
+              <a href={mailto} className="btn btn-accent btn-xl">
+                <span className="btn-label">{t.ui.emailMe}</span>
+                <span className="inline-block rtl:-scale-x-100" aria-hidden>
+                  →
+                </span>
               </a>
             </Magnetic>
             <Magnetic strength={36}>
-              <a
-                href={`tel:${profile.phone}`}
-                className="btn btn-secondary"
-              >
-                {profile.phone}
+              <a href={`tel:${profile.phone}`} className="btn btn-secondary">
+                <span className="btn-label" dir="ltr">
+                  {profile.phone}
+                </span>
               </a>
             </Magnetic>
             <Magnetic strength={36}>
               <a href={profile.cvPath} download className="btn btn-primary">
-                {t.ui.downloadCv}
+                <span className="btn-label">{t.ui.downloadCv}</span>
               </a>
             </Magnetic>
           </div>
 
-          <dl className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <span className="draw-line mt-16 opacity-60" aria-hidden />
+
+          <dl className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <dt className="text-xs font-bold tracking-[0.16em] text-[var(--ink-muted)] uppercase">
                 {t.ui.email}
               </dt>
               <dd className="mt-2">
-                <a
-                  href={mailto}
-                  className="magnetic text-lg font-medium underline-offset-4 hover:underline"
-                >
+                <a href={mailto} className="magnetic link-underline text-lg font-medium">
                   {profile.email}
                 </a>
               </dd>
@@ -96,7 +96,7 @@ export function Contact() {
                         href={s.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="magnetic underline-offset-4 hover:underline"
+                        className="magnetic link-underline"
                       >
                         {s.label}
                       </a>

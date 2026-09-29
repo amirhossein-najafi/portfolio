@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { motion, prefersReducedMotion, revealFrom, revealTo } from "@/lib/motion";
+import { motion, playWhenVisible, prefersReducedMotion } from "@/lib/motion";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -15,7 +15,7 @@ type RevealProps = {
   y?: number;
 };
 
-export function Reveal({ children, className = "", delay = 0, y = 40 }: RevealProps) {
+export function Reveal({ children, className = "", delay = 0, y = 48 }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { locale } = useLanguage();
 
@@ -24,23 +24,39 @@ export function Reveal({ children, className = "", delay = 0, y = 40 }: RevealPr
     if (!node) return;
 
     if (prefersReducedMotion()) {
-      gsap.set(node, { clearProps: "all", opacity: 1, y: 0, filter: "none" });
+      gsap.set(node, { clearProps: "all", opacity: 1 });
       return;
     }
 
+    let stopFallback = () => {};
     const ctx = gsap.context(() => {
-      gsap.fromTo(node, revealFrom(y), {
-        ...revealTo(delay),
-        scrollTrigger: {
-          trigger: node,
-          start: "top 90%",
-          toggleActions: "play none none none",
+      const tween = gsap.fromTo(
+        node,
+        { opacity: 0, y, clipPath: "inset(0% 0% 100% 0%)" },
+        {
+          opacity: 1,
+          y: 0,
+          clipPath: "inset(0% 0% 0% 0%)",
+          duration: motion.duration.reveal,
+          delay,
+          ease: "power4.out",
+          clearProps: "clipPath",
+          scrollTrigger: {
+            trigger: node,
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
         },
-      });
+      );
+      stopFallback = playWhenVisible(node, tween);
     }, node);
 
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-    return () => ctx.revert();
+    const raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => {
+      cancelAnimationFrame(raf);
+      stopFallback();
+      ctx.revert();
+    };
   }, [delay, y, locale]);
 
   return (

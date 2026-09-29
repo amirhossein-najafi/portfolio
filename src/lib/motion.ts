@@ -45,6 +45,49 @@ export function revealTo(delay = 0) {
   };
 }
 
+/**
+ * Safety net for iOS Safari + Lenis, where ScrollTrigger occasionally misses:
+ * once `el` is actually on screen, play `tween` if it still has not started.
+ */
+export function playWhenVisible(el: Element, tween: gsap.core.Animation, delay = 900) {
+  if (typeof IntersectionObserver === "undefined") {
+    tween.play();
+    return () => {};
+  }
+  let timer = 0;
+  const io = new IntersectionObserver(([entry]) => {
+    if (!entry?.isIntersecting) return;
+    io.disconnect();
+    timer = window.setTimeout(() => {
+      if (tween.progress() === 0) tween.play();
+    }, delay);
+  });
+  io.observe(el);
+  return () => {
+    io.disconnect();
+    window.clearTimeout(timer);
+  };
+}
+
+export const PRELOADER_DONE = "preloader:done";
+
+export function markPreloaderDone() {
+  if (typeof window === "undefined") return;
+  (window as unknown as { __preloaderDone?: boolean }).__preloaderDone = true;
+  window.dispatchEvent(new Event(PRELOADER_DONE));
+}
+
+export function onPreloaderDone(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  if ((window as unknown as { __preloaderDone?: boolean }).__preloaderDone) {
+    callback();
+    return () => {};
+  }
+  const handler = () => callback();
+  window.addEventListener(PRELOADER_DONE, handler, { once: true });
+  return () => window.removeEventListener(PRELOADER_DONE, handler);
+}
+
 export function splitWords(text: string) {
   return text.split(/(\s+)/).filter((part) => part.length > 0);
 }

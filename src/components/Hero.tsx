@@ -1,65 +1,130 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Magnetic } from "@/components/Magnetic";
 import { activeSocials, profile } from "@/data/profile";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { isFinePointer, motion, prefersReducedMotion } from "@/lib/motion";
+import { isFinePointer, motion, onPreloaderDone, prefersReducedMotion } from "@/lib/motion";
+import { canRenderHeroScene } from "@/lib/webgl";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const HeroCanvas = dynamic(() => import("@/components/three/HeroCanvas"), { ssr: false });
+
+type SceneMode = "pending" | "webgl" | "orb";
+
+function NameLine({ text, split, className = "" }: { text: string; split: boolean; className?: string }) {
+  return (
+    <span className={`block overflow-hidden py-[0.1em] ${className}`}>
+      {split ? (
+        <span className="inline-block" aria-label={text}>
+          {Array.from(text).map((char, i) => (
+            <span key={`${char}-${i}`} className="hero-char inline-block will-change-transform" aria-hidden>
+              {char}
+            </span>
+          ))}
+        </span>
+      ) : (
+        <span className="hero-char inline-block will-change-transform">{text}</span>
+      )}
+    </span>
+  );
+}
 
 export function Hero() {
   const rootRef = useRef<HTMLElement>(null);
   const portraitRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef(0);
+  const [sceneMode, setSceneMode] = useState<SceneMode>("pending");
+  const [inView, setInView] = useState(true);
   const socials = activeSocials();
-  const { t, locale } = useLanguage();
+  const { t, locale, dir } = useLanguage();
+  const splitName = locale !== "fa";
+
+  useEffect(
+    () => onPreloaderDone(() => setSceneMode(canRenderHeroScene() ? "webgl" : "orb")),
+    [],
+  );
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    if (prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: motion.ease } });
-      tl.from(".hero-line", { yPercent: 110, duration: 1.15, stagger: 0.1 }, 0.15)
-        .from(
-          ".hero-fade",
-          { opacity: 0, y: 28, duration: 0.9, stagger: 0.07 },
-          0.4,
-        )
-        .from(
-          ".hero-portrait",
-          { opacity: 0, y: 52, scale: 0.94, duration: 1.25 },
-          0.25,
-        )
-        .from(".hero-portrait-glow", { opacity: 0, scale: 0.85, duration: 1.3 }, 0.4);
-
-      gsap.to(".hero-portrait", {
-        yPercent: -10,
-        ease: "none",
-        scrollTrigger: {
-          trigger: root,
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
-    }, root);
-
-    return () => ctx.revert();
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      threshold: 0,
+    });
+    io.observe(root);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root || prefersReducedMotion()) return;
-    const lines = root.querySelectorAll(".hero-line");
+
+    let fallbackId = 0;
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ paused: true, defaults: { ease: motion.ease } });
+      tl.from(".hero-char", { yPercent: 115, rotate: 6, duration: 1.1, stagger: 0.035 }, 0)
+        .from(".hero-underline", { scaleX: 0, duration: 1.1, ease: "power4.inOut" }, 0.45)
+        .from(".hero-fade", { opacity: 0, y: 28, duration: 0.9, stagger: 0.07 }, 0.35)
+        .from(".hero-portrait", { opacity: 0, y: 60, scale: 0.92, duration: 1.3 }, 0.2)
+        .from(".hero-portrait-glow", { opacity: 0, scale: 0.8, duration: 1.4 }, 0.35)
+        .from(".scroll-cue", { opacity: 0, y: 16, duration: 0.8 }, 0.9);
+
+      const play = () => {
+        window.clearTimeout(fallbackId);
+        tl.play();
+      };
+      const offDone = onPreloaderDone(play);
+      fallbackId = window.setTimeout(play, 4500);
+
+      gsap.to(".hero-portrait", {
+        yPercent: -10,
+        ease: "none",
+        scrollTrigger: { trigger: root, start: "top top", end: "bottom top", scrub: true },
+      });
+
+      gsap.to(".hero-copy", {
+        yPercent: -14,
+        opacity: 0.35,
+        ease: "none",
+        scrollTrigger: { trigger: root, start: "top top", end: "bottom top", scrub: true },
+      });
+
+      ScrollTrigger.create({
+        trigger: root,
+        start: "top top",
+        end: "bottom top",
+        onUpdate: (self) => {
+          progressRef.current = self.progress;
+        },
+      });
+
+      return () => offDone();
+    }, root);
+
+    return () => {
+      window.clearTimeout(fallbackId);
+      ctx.revert();
+    };
+  }, []);
+
+  const firstLocaleRun = useRef(true);
+  useEffect(() => {
+    if (firstLocaleRun.current) {
+      firstLocaleRun.current = false;
+      return;
+    }
+    const root = rootRef.current;
+    if (!root || prefersReducedMotion()) return;
+    const chars = root.querySelectorAll(".hero-char");
     gsap.fromTo(
-      lines,
-      { yPercent: 30, opacity: 0.45 },
-      { yPercent: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: motion.easeSoft },
+      chars,
+      { yPercent: 40, opacity: 0.4 },
+      { yPercent: 0, opacity: 1, duration: 0.55, stagger: 0.02, ease: motion.easeSoft },
     );
   }, [locale]);
 
@@ -96,7 +161,7 @@ export function Hero() {
     <section
       id="top"
       ref={rootRef}
-      className="relative flex min-h-[100svh] items-center overflow-hidden pt-28 pb-20 md:pt-32 md:pb-24"
+      className="relative flex min-h-[100svh] items-center overflow-hidden pt-28 pb-24 md:pt-32 md:pb-28"
     >
       <div
         className="pointer-events-none absolute inset-0"
@@ -107,28 +172,41 @@ export function Hero() {
         aria-hidden
       />
 
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        {sceneMode === "webgl" ? (
+          <HeroCanvas progress={progressRef} side={dir === "rtl" ? -1 : 1} active={inView} />
+        ) : null}
+        {sceneMode === "orb" ? (
+          <div className="hero-orb-wrap">
+            <div className="hero-orb" />
+            <div className="hero-orb hero-orb--green" />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="hero-grid-lines pointer-events-none absolute inset-0 z-0" aria-hidden />
+
       <div className="container relative z-10 grid items-center gap-14 lg:grid-cols-[1.2fr_0.8fr] lg:gap-20">
-        <div>
+        <div className="hero-copy">
           <p className="hero-fade section-label !mb-5">
             {t.title} · {t.location}
           </p>
 
           <h1
-            className={`display text-[clamp(3rem,9vw,6.2rem)] font-semibold leading-[1.02] text-[var(--ink)] ${
+            className={`display text-[clamp(3.1rem,9.5vw,6.8rem)] font-semibold leading-[1.02] text-[var(--ink)] ${
               locale === "fa" ? "max-w-[12ch]" : "max-w-[10ch]"
             }`}
           >
-            <span className="block overflow-hidden py-[0.1em]">
-              <span className="hero-line inline-block will-change-transform">{t.firstName}</span>
-            </span>
-            <span className="block overflow-hidden py-[0.1em]">
-              <span className="hero-line inline-block text-[var(--gold)] will-change-transform">
-                {t.lastName}
-              </span>
-            </span>
+            <NameLine text={t.firstName} split={splitName} />
+            <NameLine text={t.lastName} split={splitName} className="hero-name-accent" />
           </h1>
 
-          <p className="hero-fade mt-4 text-sm font-semibold tracking-[0.14em] text-[var(--gold)] uppercase md:text-base md:tracking-[0.18em]">
+          <span
+            className="hero-underline mt-3 block h-px w-28 origin-left bg-gradient-to-r from-[var(--gold)] to-transparent rtl:origin-right rtl:bg-gradient-to-l"
+            aria-hidden
+          />
+
+          <p className="hero-fade mt-5 text-sm font-semibold tracking-[0.14em] text-[var(--gold)] uppercase md:text-base md:tracking-[0.18em]">
             {t.signature}
           </p>
 
@@ -139,12 +217,12 @@ export function Hero() {
           <div className="hero-fade mt-9 flex flex-wrap gap-3">
             <Magnetic strength={36}>
               <a href="#projects" className="btn btn-accent">
-                {t.ui.viewWork}
+                <span className="btn-label">{t.ui.viewWork}</span>
               </a>
             </Magnetic>
             <Magnetic strength={36}>
               <a href={profile.cvPath} download className="btn btn-primary">
-                {t.ui.downloadCv}
+                <span className="btn-label">{t.ui.downloadCv}</span>
               </a>
             </Magnetic>
           </div>
@@ -157,7 +235,7 @@ export function Hero() {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="magnetic underline-offset-4 transition hover:text-[var(--ink)] hover:underline"
+                  className="magnetic link-underline transition hover:text-[var(--ink)]"
                 >
                   {s.label}
                 </a>
@@ -191,9 +269,21 @@ export function Hero() {
                 sizes="(max-width: 1024px) 340px, 380px"
               />
             </div>
+            <span className="portrait-corner portrait-corner--tl" aria-hidden />
+            <span className="portrait-corner portrait-corner--br" aria-hidden />
           </div>
         </div>
       </div>
+
+      <a
+        href="#about"
+        className="scroll-cue absolute bottom-8 left-1/2 z-10 hidden -translate-x-1/2 md:flex"
+        aria-label={t.nav[0]?.label ?? "About"}
+      >
+        <span className="scroll-cue-track">
+          <span className="scroll-cue-dot" />
+        </span>
+      </a>
     </section>
   );
 }

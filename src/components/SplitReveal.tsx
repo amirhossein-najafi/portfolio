@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { motion, prefersReducedMotion, splitWords } from "@/lib/motion";
+import { motion, playWhenVisible, prefersReducedMotion, splitWords } from "@/lib/motion";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -14,7 +14,6 @@ type SplitRevealProps = {
   className?: string;
   mode?: "words" | "lines";
   delay?: number;
-  once?: boolean;
 };
 
 export function SplitReveal({
@@ -34,21 +33,23 @@ export function SplitReveal({
 
     const targets = node.querySelectorAll(".split-unit");
     if (prefersReducedMotion()) {
-      gsap.set(targets, { clearProps: "all", opacity: 1, y: 0 });
+      gsap.set(targets, { clearProps: "all", opacity: 1 });
       return;
     }
 
+    let stopFallback = () => {};
     const ctx = gsap.context(() => {
-      gsap.fromTo(
+      const tween = gsap.fromTo(
         targets,
-        { opacity: 0, y: mode === "lines" ? 48 : 28 },
+        { opacity: 0, yPercent: 110, rotate: mode === "lines" ? 0 : 4 },
         {
           opacity: 1,
-          y: 0,
-          duration: motion.duration.base,
+          yPercent: 0,
+          rotate: 0,
+          duration: motion.duration.slow,
           delay,
-          stagger: motion.stagger.tight,
-          ease: motion.ease,
+          stagger: mode === "lines" ? motion.stagger.base : 0.06,
+          ease: "power4.out",
           scrollTrigger: {
             trigger: node,
             start: "top 88%",
@@ -56,9 +57,13 @@ export function SplitReveal({
           },
         },
       );
+      stopFallback = playWhenVisible(node, tween);
     }, node);
 
-    return () => ctx.revert();
+    return () => {
+      stopFallback();
+      ctx.revert();
+    };
   }, [text, locale, delay, mode]);
 
   return (
@@ -68,7 +73,10 @@ export function SplitReveal({
           <span key={`s-${i}`}>{part}</span>
         ) : (
           <span key={`w-${i}`} className="inline-block overflow-hidden align-bottom py-[0.08em]">
-            <span className="split-unit inline-block will-change-transform" style={{ opacity: 0 }}>
+            <span
+              className="split-unit inline-block origin-bottom-left will-change-transform rtl:origin-bottom-right"
+              style={{ opacity: 0 }}
+            >
               {part}
             </span>
           </span>
